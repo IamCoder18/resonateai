@@ -12,9 +12,9 @@ on:
         required: false
         default: "Resonate AI Android"
       draft:
-        description: "Create as draft release?"
+        description: "Create as draft release (publish later) instead of publishing immediately?"
         type: boolean
-        default: true
+        default: false
       prerelease:
         description: "Mark as prerelease?"
         type: boolean
