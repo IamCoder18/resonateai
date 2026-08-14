@@ -13,13 +13,13 @@ import {
   X,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { apiUrl } from "@/lib/api-base";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import type { UploadedFile } from "@/components/upload-dropzone";
 import { FileList } from "@/components/file-list";
 import type { FileRecord } from "@/components/file-list";
 import {
   Kicker,
-  HudBadge,
   Crosshair,
   LogoLockup,
 } from "@/components/brand";
@@ -36,7 +36,7 @@ export function Dashboard({ user }: Props) {
 
   async function loadFiles() {
     try {
-      const res = await fetch("/api/files");
+      const res = await fetch(apiUrl("/api/files"));
       if (res.ok) {
         const data = await res.json();
         setFiles(data.files || []);

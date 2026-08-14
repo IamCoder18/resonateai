@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Upload, Loader2, FileAudio, X, Plus } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
+import { apiUrl } from "@/lib/api-base";
 import { Crosshair } from "@/components/brand";
 
 export interface UploadedFile {
@@ -79,7 +80,7 @@ export function UploadDropzone({ onUploaded }: Props) {
           }
         };
         xhr.onerror = () => reject(new Error("Network error"));
-        xhr.open("POST", "/api/upload");
+        xhr.open("POST", apiUrl("/api/upload"));
         xhr.send(fd);
       });
 

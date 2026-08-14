@@ -1,6 +1,6 @@
 "use client";
 
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 
 /* ===========================================================================
    HeroScope — the folder upload animation, rebuilt from scratch.
@@ -139,15 +139,26 @@ function ScanBeam() {
 /* ------------------------------------------------------------------------
    Submissions card — dark themed status list.
    ------------------------------------------------------------------------ */
-const SUBMISSIONS = [
-  { name: "Lead vocal.mp3", status: "In progress", active: true },
-  { name: "Guitar take.wav", status: "Cleaned", active: false },
-  { name: "Demo loop.mp4", status: "Cleaned", active: false },
+type SubmissionState = "active" | "done";
+
+type Submission = {
+  name: string;
+  status: string;
+  state: SubmissionState;
+};
+
+const SUBMISSIONS: readonly Submission[] = [
+  { name: "Lead vocal take 3.mp3", status: "Mastered", state: "done" },
+  { name: "Acoustic guitar.wav", status: "Mastered", state: "done" },
+  { name: "Demo loop.mp4", status: "In progress", state: "active" },
 ];
+
+const ACTIVE_COUNT = SUBMISSIONS.filter((s) => s.state === "active").length;
+const TOTAL_COUNT = SUBMISSIONS.length;
 
 function EngineIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden>
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
       <rect
         x="5.5"
         y="5.5"
@@ -167,73 +178,89 @@ function EngineIcon() {
   );
 }
 
+function SubmissionsIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <path
+        d="M3 5.5h12M3 9h12M3 12.5h8"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      <circle cx="14.5" cy="12.5" r="1.6" fill="currentColor" />
+    </svg>
+  );
+}
+
+function CheckGlyph() {
+  return (
+    <svg width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+      <path
+        d="M2 5.2l2 2 4-4.4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ClockGlyph() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+      <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.2" />
+      <path
+        d="M6 3.5V6l1.6 1.2"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function SubmissionsCard() {
   return (
     <div className="rs-card mt-3 w-full">
-      <div className="flex items-center gap-4">
-        <div className="hidden shrink-0 items-center justify-center md:flex">
-          <svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden>
-            <rect
-              x="1"
-              y="1"
-              width="32"
-              height="32"
-              rx="9"
-              fill="rgba(255,122,26,0.12)"
-              stroke="rgba(255,122,26,0.35)"
-            />
-            <path
-              d="M9 19 V15 M13 21.5 V12.5 M17 20.5 V13.5 M21 21 V13 M25 19 V15"
-              stroke={ACCENT}
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="rs-card-title">Submissions</p>
-          <div className="mt-2 w-full">
+      <div className="rs-card-row">
+        <span className="rs-card-icon" aria-hidden="true">
+          <SubmissionsIcon />
+        </span>
+        <div className="rs-card-content">
+          <div className="rs-card-head">
+            <p className="rs-card-title">Submissions</p>
+            <span className="rs-card-count">
+              <span className="rs-card-count-dot" aria-hidden="true" />
+              {ACTIVE_COUNT > 0
+                ? `${ACTIVE_COUNT} of ${TOTAL_COUNT} processing`
+                : `${TOTAL_COUNT} in queue`}
+            </span>
+          </div>
+          <ul className="rs-submissions" aria-label="Submissions">
             {SUBMISSIONS.map((s) => (
-              <div
-                key={s.name}
-                className="flex items-center justify-between gap-3 border-b border-[rgba(255,255,255,0.06)] py-2.5 last:border-b-0"
-              >
-                <span className="truncate text-[12px] font-medium text-[#f4f1ea]/90">
+              <li key={s.name} className="rs-submission">
+                <span className="rs-submission-name" title={s.name}>
                   {s.name}
                 </span>
                 <span
-                  className={
-                    s.active
-                      ? "rs-chip-status rs-chip-status--active"
-                      : "rs-chip-status"
-                  }
+                  className={`rs-chip-status rs-chip-status--${s.state}`}
+                  aria-label={`Status: ${s.status}`}
                 >
-                  {s.active ? (
-                    <span className="rs-dot" />
+                  {s.state === "active" ? (
+                    <span className="rs-dot" aria-hidden="true" />
                   ) : (
-                    <svg
-                      width="9"
-                      height="9"
-                      viewBox="0 0 8 8"
-                      fill="none"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M1.5 4.2l1.7 1.7 3.3-3.6"
-                        stroke="#4ade80"
-                        strokeWidth="1.3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    <CheckGlyph />
                   )}
-                  {s.status}
+                  <span>{s.status}</span>
                 </span>
-              </div>
+              </li>
             ))}
-          </div>
-          <p className="mt-3 border-t border-[rgba(255,255,255,0.06)] pt-3 text-[11px] font-medium text-[#9a948a]">
-            Back in 24–48 h
+          </ul>
+          <p className="rs-card-foot">
+            <ClockGlyph />
+            <span>Avg. turnaround under 24 h</span>
           </p>
         </div>
       </div>
@@ -245,13 +272,29 @@ function SubmissionsCard() {
    HeroScope
    ======================================================================== */
 export function HeroScope() {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const update = () => {
+      setScale(Math.min(1, el.clientWidth / 460));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <div
       role="img"
       aria-label="Audio files flowing into the Resonate engine and out as a clean master"
       className="rs-cluster mx-auto flex w-full max-w-[520px] flex-col items-center"
     >
-      <div className="rs-canvas relative" style={{ width: 460, height: 300 }}>
+      <div ref={wrapRef} className="rs-canvas-wrap relative mx-auto w-full max-w-[460px]" style={{ aspectRatio: "460 / 300" }}>
+      <div className="rs-canvas absolute inset-0" style={{ width: 460, height: 300, transform: `scale(${scale})`, transformOrigin: "top left" }}>
         <div className="rs-glow" style={{ left: 110, top: 80, width: 240, height: 150 }} />
 
         <div
@@ -266,6 +309,7 @@ export function HeroScope() {
         {CHIPS.map((chip) => (
           <FileChip key={chip.label} chip={chip} />
         ))}
+      </div>
       </div>
 
       <p className="rs-label mt-1">Audio package</p>
@@ -404,50 +448,162 @@ export function HeroScope() {
         .rs-card {
           border-radius: 16px;
           border: 1px solid rgba(255,255,255,0.08);
-          background: #120f0c;
-          padding: 18px 20px;
+          background: linear-gradient(180deg, #14110d, #100d0a);
+          padding: 16px 18px;
           box-shadow: 0 18px 44px -30px rgba(0,0,0,0.8);
+          animation: rs-card-in 0.7s ease-out 0.35s backwards;
+          will-change: transform, opacity;
         }
+        @keyframes rs-card-in {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .rs-card-row {
+          display: grid;
+          grid-template-columns: auto 1fr;
+          gap: 14px;
+          align-items: flex-start;
+        }
+
+        .rs-card-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 38px;
+          height: 38px;
+          border-radius: 11px;
+          background: rgba(255, 122, 26, 0.1);
+          border: 1px solid rgba(255, 122, 26, 0.22);
+          color: ${ACCENT};
+          flex-shrink: 0;
+        }
+
+        .rs-card-content {
+          min-width: 0;
+        }
+
+        .rs-card-head {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 4px;
+        }
+
         .rs-card-title {
           font-size: 11px;
           font-weight: 600;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
           line-height: 1;
           color: ${BONE};
         }
-        .rs-chip-status {
+
+        .rs-card-count {
           display: inline-flex;
-          flex-shrink: 0;
           align-items: center;
           gap: 6px;
-          border-radius: 6px;
-          padding: 3px 7px;
           font-size: 10px;
           font-weight: 500;
-          color: #4ade80;
-          background: rgba(74,222,128,0.12);
+          letter-spacing: 0.04em;
+          color: ${STEEL};
+        }
+
+        .rs-card-count-dot {
+          width: 4px;
+          height: 4px;
+          border-radius: 999px;
+          background: ${ACCENT};
+          box-shadow: 0 0 6px rgba(255, 122, 26, 0.6);
+        }
+
+        .rs-submissions {
+          list-style: none;
+          margin: 8px 0 0;
+          padding: 0;
+          border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .rs-submission {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 9px 0;
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .rs-submission-name {
+          flex: 1 1 auto;
+          min-width: 0;
+          font-size: 12px;
+          font-weight: 500;
+          color: ${BONE};
+          opacity: 0.92;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .rs-chip-status {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 8px;
+          border-radius: 6px;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.02em;
+          flex-shrink: 0;
+          white-space: nowrap;
         }
         .rs-chip-status--active {
           color: ${ACCENT};
-          background: rgba(255,122,26,0.14);
+          background: rgba(255, 122, 26, 0.14);
+          border: 1px solid rgba(255, 122, 26, 0.22);
         }
+        .rs-chip-status--done {
+          color: #8ac4a9;
+          background: rgba(138, 196, 169, 0.1);
+          border: 1px solid rgba(138, 196, 169, 0.18);
+        }
+
         .rs-dot {
-          display: block;
           width: 5px;
           height: 5px;
           border-radius: 999px;
           background: ${ACCENT};
+          box-shadow: 0 0 6px rgba(255, 122, 26, 0.6);
           animation: rs-pulse 2.4s ease-in-out infinite;
         }
         @keyframes rs-pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        .rs-card-foot {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin: 6px 0 0;
+          padding: 10px 0 0;
+          border-top: 1px solid rgba(255,255,255,0.06);
+          font-size: 11px;
+          font-weight: 500;
+          color: ${STEEL};
+        }
+
+        @media (max-width: 767px) {
+          .rs-card-row { grid-template-columns: 1fr; }
+          .rs-card-icon { display: none; }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .rs-folder, .rs-glow, .rs-bar, .rs-scanline, .rs-chip, .rs-dot { animation: none !important; }
+          .rs-folder, .rs-glow, .rs-bar, .rs-scanline, .rs-chip, .rs-dot, .rs-card { animation: none !important; }
         }
-        @media (max-width: 520px) {
-          .rs-canvas { transform: scale(0.78); transform-origin: top center; margin-bottom: -66px; }
+        .rs-canvas-wrap {
+          container-type: inline-size;
         }
       `}</style>
     </div>

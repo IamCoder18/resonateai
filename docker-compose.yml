@@ -16,6 +16,8 @@ services:
       retries: 10
     expose:
       - "5432"
+    ports:
+      - "127.0.0.1:5433:5432"
 
   migrate:
     build:
@@ -58,14 +60,6 @@ services:
     entrypoint: ["node", "/init.mjs"]
     restart: "no"
 
-  mailpit:
-    image: axllent/mailpit:latest
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:8025:8025"
-    expose:
-      - "1025"
-
   web:
     build:
       context: ./web
@@ -92,8 +86,8 @@ services:
       S3_BUCKET: audio
       S3_FORCE_PATH_STYLE: "true"
       S3_CREDENTIALS_FILE: /shared/garage.env
-      SMTP_HOST: ${SMTP_HOST:-mailpit}
-      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_SECURE: ${SMTP_SECURE:-false}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}

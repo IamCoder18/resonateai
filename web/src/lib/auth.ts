@@ -35,6 +35,10 @@ export const auth = betterAuth({
     process.env.BETTER_AUTH_URL || "http://localhost:3000",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "capacitor://localhost",
+    "http://localhost",
+    "https://localhost",
+    "https://resonate.aaravlabs.com",
   ],
 });
 

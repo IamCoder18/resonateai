@@ -74,9 +74,9 @@ Sign up with any email + password (≥ 8 chars), then upload.
 
 **Limits:** up to 25 files per batch, ≤ 500 MB per file.
 
-## Production SMTP
+## SMTP
 
-By default the stack ships with [Mailpit](https://mailpit.axllent.org/) for catching notification emails in development. For production, replace the `mailpit` service in `docker-compose.yml` with your real SMTP — any provider that exposes SMTP works:
+Configure outbound mail via env vars. Any provider that exposes SMTP works:
 
 ```yaml
 environment:
@@ -109,7 +109,7 @@ environment:
 
 ```
 resonateai/
-├── docker-compose.yml        # web + garage + garage-init + postgres + mailpit
+├── docker-compose.yml        # web + garage + garage-init + postgres
 ├── .env.example
 ├── garage/
 │   ├── garage.toml           # Garage S3 configuration
@@ -146,3 +146,26 @@ The web container's `entrypoint.sh` waits for Postgres, runs `drizzle-kit push`,
 ## License
 
 MIT
+
+## Mobile app (Android, Capacitor)
+
+A native-feel Android shell lives in [`android/`](./android) and ships the
+`/app/*` routes of this Next.js app inside a Capacitor WebView. The same
+Better Auth + `/api/*` endpoints back the mobile app — there is no mobile
+backend.
+
+```bash
+# Build the static mobile bundle, sync it into android/, and assemble an APK
+npm run mobile:build      # → web/out
+npm run mobile:sync       # → cap sync android
+npm run mobile:assemble   # → gradle assembleDebug (debug APK)
+npm run mobile:package    # → signed release APK
+```
+
+See [`web/MOBILE.md`](./web/MOBILE.md) for the full build pipeline, the
+share-extension manifest, sideload install instructions for testers, and
+the on-device test plan.
+
+Push notifications, Play Store listing, and the iOS build are
+explicitly deferred — see the v1 plan in
+[`.kilo/plans/`](./.kilo/plans/) for the full scope.

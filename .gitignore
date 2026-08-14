@@ -5,3 +5,26 @@ node_modules
 .next
 data
 .DS_Store
+web/out
+
+# Mobile-build backup dirs / files — left behind if a build is interrupted
+# mid-flight (between prebuild and postbuild). NEVER commit these. They are
+# safe to `rm -rf` once you've restored the originals (mobile-postbuild does
+# the restore automatically when the build completes).
+web/src/_*-mobile-backup*
+
+
+# Capacitor / Android
+android/.gradle/
+android/.idea/
+android/local.properties
+android/build/
+android/app/build/
+android/app/release/
+android/app/src/main/assets/public/
+android/captures/
+android/*.iml
+android/app/*.iml
+*.keystore
+*.keystore.keystore
+keystore.properties

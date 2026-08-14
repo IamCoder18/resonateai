@@ -24,7 +24,6 @@ import {
   HudBadge,
   LogoLockup,
   Crosshair,
-  CornerLink,
 } from "@/components/brand";
 
 interface Submission {
@@ -492,12 +491,10 @@ function Tick({ classes }: { classes: string }) {
 function CornerButtonAsButton({
   children,
   onClick,
-  variant,
-  size = "sm",
 }: {
   children: React.ReactNode;
   onClick: () => void;
-  variant: "ghost";
+  variant?: "ghost";
   size?: "sm" | "md" | "lg";
 }) {
   return (

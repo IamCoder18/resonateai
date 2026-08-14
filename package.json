@@ -1,1 +1,28 @@
-{}
+{
+  "name": "resonateai",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "start": "npm --prefix web run start",
+    "lint": "npm --prefix web run lint",
+    "db:generate": "npm --prefix web run db:generate",
+    "db:push": "npm --prefix web run db:push",
+    "mobile:build": "node scripts/mobile-prebuild.js && BUILD_TARGET=mobile npm --prefix web run build && node scripts/mobile-postbuild.js",
+    "mobile:prebuild": "node scripts/mobile-prebuild.js",
+    "mobile:postbuild": "node scripts/mobile-postbuild.js",
+    "mobile:sync": "cap sync android",
+    "mobile:copy": "cap copy android",
+    "mobile:open": "cap open android",
+    "mobile:assemble": "cd android && ./gradlew assembleDebug",
+    "mobile:package": "npm run mobile:build && npm run mobile:sync && cd android && ./gradlew assembleRelease",
+    "mobile:doctor": "cap doctor android",
+    "mobile:clean": "rm -rf web/.next web/out android/app/src/main/assets/public && cap copy android"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.0.0",
+    "typescript": "^7.0.2"
+  }
+}

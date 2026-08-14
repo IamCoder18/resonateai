@@ -7,6 +7,7 @@ import { signDownloadUrl } from "@/lib/signed-urls";
 import { isAdminEmail } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  const { fileId, kind } = await req.json().catch(() => ({} as any));
+  const { fileId, kind } = await req.json().catch(() => ({} as Record<string, unknown>));
   if (!fileId || !kind) {
     return NextResponse.json({ error: "fileId and kind required" }, { status: 400 });
   }

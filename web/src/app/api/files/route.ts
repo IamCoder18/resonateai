@@ -6,6 +6,7 @@ import { audioFile } from "@/db/schema";
 import { isAdminEmail } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 const DEFAULT_LIMIT = 50;

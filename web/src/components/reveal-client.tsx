@@ -46,7 +46,7 @@ export function RevealClient() {
           if (node.nodeType !== 1) return;
           const el = node as Element;
           if (el.classList && el.classList.contains("reveal")) enhance(el);
-          if ((el as any).querySelectorAll) {
+          if ((el as Element).querySelectorAll) {
             el.querySelectorAll(".reveal").forEach(enhance);
           }
         });

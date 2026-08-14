@@ -4,6 +4,7 @@ import { getObject } from "@/lib/blob";
 import { getSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
@@ -75,5 +76,5 @@ export async function GET(req: NextRequest) {
   );
   headers.set("Cache-Control", "private, no-store");
 
-  return new NextResponse(object.body as any, { status: 200, headers });
+  return new NextResponse(object.body as unknown as ReadableStream<Uint8Array>, { status: 200, headers });
 }

@@ -6,6 +6,7 @@ import { audioFile } from "@/db/schema";
 import { signDownloadUrl } from "@/lib/signed-urls";
 
 export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 export async function POST(

@@ -10,6 +10,7 @@ import { isAdminEmail } from "@/lib/admin";
 import { AUDIO_EXT } from "@/lib/convert";
 
 export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 export const maxDuration = 300;
 

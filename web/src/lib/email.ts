@@ -243,3 +243,23 @@ export async function sendFinishedNotification({
 
   await transport.sendMail({ from, to, subject, text, html });
 }
+
+/*
+ * TODO(v2 push notifications):
+ *
+ * The AndroidManifest already declares the FCM default notification channel
+ * (com.google.firebase.messaging.default_notification_channel_id =
+ * "resonate_default") as a forward-looking placeholder. v1 ships without push
+ * notifications — users learn about finished files via the email triggered by
+ * sendFinishedNotification above.
+ *
+ * To enable FCM in v2:
+ *   1. Drop a google-services.json into android/app/ — Gradle auto-applies
+ *      the google-services plugin (already wired in build.gradle).
+ *   2. Install @capacitor/push-notifications and the FCM native plugin.
+ *   3. Mint a device-token endpoint on /api/devices and persist tokens.
+ *   4. After sendFinishedNotification, also push via FCM to the user's
+ *      registered tokens.
+ *   5. Make the channel resonate_default with importance HIGH so heads-up
+ *      notifications show on lock screen.
+ */

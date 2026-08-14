@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { FileAudio, Music, Loader2, Download } from "lucide-react";
+import { FileAudio, Loader2, Download } from "lucide-react";
 import { formatBytes, formatDate } from "@/lib/utils";
+import { apiUrl } from "@/lib/api-base";
 import { StatusBadge } from "@/components/status-badge";
 
 export interface FileRecord {
@@ -31,7 +32,9 @@ export function FileList({ files }: Props) {
     setDownloading(fileId);
     setError(null);
     try {
-      const res = await fetch(`/api/files/${fileId}/sign`, { method: "POST" });
+      const res = await fetch(apiUrl(`/api/files/${fileId}/sign`), {
+        method: "POST",
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(data.error || "Sign failed");
@@ -46,7 +49,7 @@ export function FileList({ files }: Props) {
 
   if (files.length === 0) {
     return (
-      <div className="border border-line bg-panel-30 p-12 text-center">
+      <div className="border border-line bg-panel-30 p-10 text-center sm:p-12">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center border border-line bg-panel-40 text-accent">
           <FileAudio className="h-6 w-6" strokeWidth={1.5} />
         </div>
@@ -65,54 +68,84 @@ export function FileList({ files }: Props) {
           ! {error}
         </div>
       )}
-      {files.map((f) => (
-        <div
-          key={f.id}
-          className="flex items-center gap-4 border-b border-line p-4 transition-colors last:border-b-0 hover:bg-white/2"
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-line bg-panel-40 text-accent">
-            <FileAudio className="h-5 w-5" strokeWidth={1.5} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate font-serif text-[1.1rem] text-bone">
-              {f.filename}
+      <ul className="divide-y divide-line">
+        {files.map((f) => (
+          <FileRow
+            key={f.id}
+            file={f}
+            downloading={downloading === f.id}
+            onDownload={() => downloadCleaned(f.id)}
+          />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+interface FileRowProps {
+  file: FileRecord;
+  downloading: boolean;
+  onDownload: () => void;
+}
+
+function FileRow({ file: f, downloading, onDownload }: FileRowProps) {
+  const isReady = f.status === "ready" && !!f.cleanedFilename;
+
+  return (
+    <li className="group p-4 transition-colors hover:bg-white/2 sm:p-5">
+      {/* Row 1: icon + filename + status badge */}
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-line bg-panel-40 text-accent sm:h-11 sm:w-11">
+          <FileAudio className="h-5 w-5" strokeWidth={1.5} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 font-serif text-[1.05rem] leading-tight text-bone">
+              <span className="break-all sm:truncate sm:break-normal">
+                {f.filename}
+              </span>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 font-mono text-[0.78rem] text-steel-70">
-              <span>{formatBytes(f.sizeBytes)}</span>
-              <span className="text-steel-55">·</span>
-              <span>{formatDate(f.uploadedAt)}</span>
-              {f.convertedFilename && (
-                <>
-                  <span className="text-steel-55">·</span>
-                  <span className="inline-flex items-center gap-1 text-accent">
-                    <Music className="h-3 w-3" strokeWidth={1.5} />
-                    {f.convertedFilename}
-                  </span>
-                </>
-              )}
+            <div className="shrink-0 pt-0.5">
+              <StatusBadge status={f.status} />
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-3">
-            {f.status === "ready" && f.cleanedFilename && (
-              <button
-                onClick={() => downloadCleaned(f.id)}
-                disabled={downloading === f.id}
-                className="group relative inline-flex h-8 items-center gap-1.5 border border-accent-40 bg-accent-10 px-3 font-mono text-[0.7rem] uppercase tracking-[0.18em] text-accent transition-colors hover:bg-accent-20 disabled:opacity-50"
-              >
-                <CornerTicksCanvas />
-                {downloading === f.id ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
-                )}
-                Download
-              </button>
-            )}
-            <StatusBadge status={f.status} />
+
+          {/* Row 2: meta */}
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[0.78rem] text-steel-70">
+            <span>{formatBytes(f.sizeBytes)}</span>
+            <span className="text-steel-55">·</span>
+            <span>{formatDate(f.uploadedAt)}</span>
+            {f.cleanedSizeBytes ? (
+              <>
+                <span className="text-steel-55">·</span>
+                <span className="text-bone-70">
+                  {formatBytes(f.cleanedSizeBytes)} cleaned
+                </span>
+              </>
+            ) : null}
           </div>
         </div>
-      ))}
-    </div>
+      </div>
+
+      {/* Row 3: full-width download CTA (mobile), inline button (desktop) */}
+      {isReady && (
+        <div className="mt-3 sm:mt-3">
+          <button
+            onClick={onDownload}
+            disabled={downloading}
+            className="group/btn relative inline-flex h-11 w-full items-center justify-center gap-2 border border-accent-40 bg-accent-10 font-mono text-[0.78rem] uppercase tracking-[0.16em] text-accent transition-colors hover:bg-accent-20 disabled:opacity-50 sm:h-9 sm:w-auto sm:px-4"
+          >
+            <CornerTicksCanvas />
+            {downloading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" strokeWidth={1.5} />
+            )}
+            <span>Download cleaned</span>
+          </button>
+        </div>
+      )}
+    </li>
   );
 }
 
