@@ -5,7 +5,7 @@ import path from "node:path";
 
 const MAX_INPUT_BYTES = 500 * 1024 * 1024;
 
-const VIDEO_EXT = new Set([
+export const VIDEO_EXT = new Set([
   "mp4", "m4v", "mov", "webm", "mkv", "avi", "mpg", "mpeg", "wmv", "flv", "3gp", "ts", "mts", "m2ts",
 ]);
 

@@ -434,7 +434,7 @@ function SubmissionRow({
           <input
             ref={registerInput}
             type="file"
-            accept="audio/*,.mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.aiff"
+            accept="audio/*,video/*,.mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.aiff,.mp4,.mov"
             className="block w-full cursor-pointer border border-white/15 bg-canvas px-3 py-2 font-mono text-[0.78rem] text-bone-80 file:mr-3 file:border-0 file:bg-panel-50 file:px-3 file:py-1.5 file:font-mono file:text-[0.7rem] file:uppercase file:tracking-[0.18em] file:text-bone-80 hover:border-accent-40 file:cursor-pointer"
           />
         </label>

@@ -7,7 +7,7 @@ import { putObject, BLOB_BUCKET, deleteObject } from "@/lib/blob";
 import { signDownloadUrl } from "@/lib/signed-urls";
 import { sendFinishedNotification, FinishedFileEntry } from "@/lib/email";
 import { isAdminEmail } from "@/lib/admin";
-import { AUDIO_EXT } from "@/lib/convert";
+import { AUDIO_EXT, VIDEO_EXT } from "@/lib/convert";
 
 export const dynamic = "force-dynamic";
 
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      await putObject(cleanedKey, buffer, file.type || "audio/mpeg");
+      await putObject(cleanedKey, buffer, file.type || "application/octet-stream");
 
       const signed = signDownloadUrl({
         blobKey: cleanedKey,
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
         .update(audioFile)
         .set({
           cleanedFilename: file.name,
-          cleanedMimeType: file.type || "audio/mpeg",
+          cleanedMimeType: file.type || "application/octet-stream",
           cleanedSizeBytes: buffer.length,
           cleanedBlobId: `${BLOB_BUCKET}/${cleanedKey}`,
           status: "ready",
@@ -210,8 +210,8 @@ export async function POST(req: NextRequest) {
 }
 
 function isSupportedCleaned(ext: string, mimeType: string): boolean {
-  if (AUDIO_EXT.has(ext)) return true;
-  if (mimeType.startsWith("audio/")) return true;
+  if (AUDIO_EXT.has(ext) || VIDEO_EXT.has(ext)) return true;
+  if (mimeType.startsWith("audio/") || mimeType.startsWith("video/")) return true;
   return false;
 }
 
