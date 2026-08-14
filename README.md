@@ -1,6 +1,6 @@
 # Resonate AI
 
-> Studio-quality audio cleaning, on demand. Upload raw recordings or video, and get a polished MP3 back within 24–48 hours.
+> Send raw recordings or video, get a cleaner MP3 back — usually within 24–48 hours.
 
 Resonate AI is a self-hostable SaaS application built around a simple workflow:
 

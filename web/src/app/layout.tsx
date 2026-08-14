@@ -20,7 +20,7 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Resonate AI — Audio cleaning, delivered",
   description:
-    "Send raw recordings with hiss, hum, or room tone. Get them back de-noised, de-essed, and level-matched within 24-48 hours.",
+    "Send raw recordings with hiss, hum, or room tone. Get them back cleaned up — usually within a day or two.",
   keywords: [
     "audio cleaning",
     "podcast editing",

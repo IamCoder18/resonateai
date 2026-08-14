@@ -4,7 +4,7 @@ Welcome to Resonate AI. This guide will walk you through using the app to get yo
 
 ## What Resonate AI does
 
-You upload audio or video files. Resonate AI converts them to MP3 and our team cleans them up — removing background noise, hum, mouth clicks, and plosives. You'll get an email with a download link for the polished MP3 within **24–48 hours**.
+You upload audio or video files. Resonate AI converts them to MP3 and our team cleans them up — removing background noise, hum, mouth clicks, and plosives. You'll get an email with a download link for the cleaned MP3 within **24–48 hours**.
 
 ## Getting started
 
@@ -75,7 +75,7 @@ Click the **Sign out** button in the top-right corner of the Dashboard.
 Up to 24–48 hours. Most files are returned sooner.
 
 **What does "cleaning" mean?**
-We remove background noise, hiss, hum, clicks, pops, and other unwanted sounds, then balance the levels so it sounds polished and ready to publish.
+We remove background noise, hiss, hum, clicks, pops, and other unwanted sounds, then balance the levels so it sounds cleaner and ready to publish.
 
 **Why MP3?**
 MP3 is a universal format that plays everywhere. We standardize everything to MP3 so you get a consistent, reliable file every time.

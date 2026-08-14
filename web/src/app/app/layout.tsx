@@ -3,7 +3,7 @@ import { MobileScaffold } from "@/components/mobile-scaffold";
 
 export const metadata: Metadata = {
   title: "Resonate AI",
-  description: "Upload audio or video, get a polished MP3 back.",
+  description: "Upload audio or video, get a cleaner MP3 back.",
   robots: { index: false, follow: false },
 };
 

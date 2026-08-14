@@ -290,7 +290,7 @@ export function HeroScope() {
   return (
     <div
       role="img"
-      aria-label="Audio files flowing into the Resonate engine and out as a clean master"
+      aria-label="Audio files flowing into the Resonate engine and back out as cleaned audio"
       className="rs-cluster mx-auto flex w-full max-w-[520px] flex-col items-center"
     >
       <div ref={wrapRef} className="rs-canvas-wrap relative mx-auto w-full max-w-[460px]" style={{ aspectRatio: "460 / 300" }}>
@@ -318,7 +318,7 @@ export function HeroScope() {
         <EngineIcon />
         Resonate Audio Engine
       </span>
-      <p className="rs-caption mt-2">The engine cleans &amp; masters everything</p>
+      <p className="rs-caption mt-2">The engine handles the cleanup</p>
       <span className="rs-conn mt-2.5" aria-hidden="true" />
 
       <SubmissionsCard />

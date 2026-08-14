@@ -188,7 +188,7 @@ function Hero() {
               className="reveal"
               style={{ ["--reveal-delay" as string]: "0ms" }}
             >
-              <Kicker>Studio-grade audio cleaning · on demand</Kicker>
+              <Kicker>AI audio cleanup · on demand</Kicker>
             </div>
             <h1
               className="reveal mt-7 font-serif text-[2.6rem] leading-[1.02] text-bone sm:text-[3.6rem] lg:text-[4.4rem]"
@@ -202,9 +202,9 @@ function Hero() {
               className="reveal mt-7 max-w-[540px] font-mono text-[0.95rem] leading-[1.65] text-bone-70 sm:text-[1rem]"
               style={{ ["--reveal-delay" as string]: "160ms" }}
             >
-              Send a recording with hiss, hum, room tone, or sibilance.
-              Get back a de-noised, de-essed, level-matched master —
-              same format, usually within 24–48 hours.
+              Send a recording with hiss, hum, or room noise. Get a
+              cleaner version back in the same format — usually within
+              a day or two.
             </p>
             <div
               className="reveal mt-10 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4"
@@ -252,7 +252,7 @@ function Hero() {
 function TurnTime() {
   const phases = [
     { n: "01", title: "Upload", desc: "Drop or pick a file. We handle the rest." },
-    { n: "02", title: "Work", desc: "De-noise, de-ess, level, master." },
+    { n: "02", title: "Work", desc: "We clean it up." },
     { n: "03", title: "Email", desc: "A download link lands in your inbox." },
   ];
   return (
@@ -288,8 +288,8 @@ function TurnTime() {
             className="reveal mt-6 max-w-[520px] font-mono text-[0.95rem] leading-[1.65] text-bone-70"
             style={{ ["--reveal-delay" as string]: "160ms" }}
           >
-            One queue, one schedule. Your ETA lands on the dashboard the
-            moment your file is ingested.
+            One queue, one schedule. You'll get an email when it's ready
+            — usually within a day or two.
           </p>
           <div
             className="reveal mt-10 grid grid-cols-2 gap-px border border-line bg-line"
@@ -355,7 +355,7 @@ function TimelineCard() {
           {[
             { label: "Upload", color: "bg-accent" },
             { label: "Ingest", color: "bg-bone" },
-            { label: "Clean & master", color: "bg-bone" },
+            { label: "Cleanup", color: "bg-bone" },
             { label: "QA · send", color: "bg-accent" },
           ].map((m, i, arr) => (
             <div
@@ -606,7 +606,7 @@ function SiteFooter() {
             <div>
               <LogoLockup />
               <p className="mt-6 max-w-[300px] font-mono text-[0.85rem] leading-[1.6] text-steel-70">
-                Raw in, clean out. Send a file, get a polished master back —
+                Raw in, clean out. Send a file, get it back cleaner —
                 usually within a day or two.
               </p>
               <div className="mt-6">

@@ -87,9 +87,9 @@ export default function AppIntroPage() {
           className="reveal mt-6 font-mono text-[0.95rem] leading-[1.6] text-bone-70"
           style={{ ["--reveal-delay" as string]: "200ms" }}
         >
-          Send a recording with hiss, hum, room tone, or sibilance. Get back a
-          de-noised, de-essed, level-matched master — same format, usually
-          within 24–48 hours.
+          Send a recording with hiss, hum, or room noise. Get a
+          cleaner version back in the same format — usually within
+          a day or two.
         </p>
       </section>
 
@@ -144,8 +144,8 @@ export default function AppIntroPage() {
           <Step
             n="02"
             icon={Sparkles}
-            title="Clean & master"
-            desc="De-noise, de-ess, level-match. Same format out."
+            title="Clean up"
+            desc="We clean the audio. Same format out."
           />
           <Step
             n="03"
@@ -174,8 +174,8 @@ export default function AppIntroPage() {
           <div className="flex items-start gap-3">
             <div className="mt-0.5 h-2 w-2 rounded-full bg-accent shadow-[0_0_10px_rgba(255,122,26,0.7)]" />
             <p className="font-mono text-[0.82rem] leading-[1.55] text-bone-70">
-              One queue, one schedule. Your ETA appears on the dashboard the
-              moment your file is ingested. Files are purged after 7 days.
+              One queue, one schedule. We'll email a download link the
+              moment your file is ready. Files are purged after 7 days.
             </p>
           </div>
         </div>
