@@ -1,37 +1,41 @@
 # Resonate AI
 
-> Studio-quality audio cleaning, on demand. Upload raw recordings and get them back polished within 24-48 hours.
+> Studio-quality audio cleaning, on demand. Upload raw recordings or video, and get a polished MP3 back within 24–48 hours.
 
-Resonate AI is a complete SaaS application built around a simple workflow:
+Resonate AI is a self-hostable SaaS application built around a simple workflow:
 
 1. **Sign up** with email + password (powered by [Better Auth](https://www.better-auth.com/))
-2. **Upload** raw audio files (MP3, WAV, FLAC, M4A, AAC, OGG — up to 100 MB)
-3. **We email you** the cleaned, mastered file within 24-48 hours
+2. **Upload** up to 25 audio or video files at once (≤ 500 MB each)
+3. **We email you** a signed download link to the cleaned MP3 within 24–48 hours
 
-Behind the scenes, every upload is persisted to Postgres, stored in the bundled **Fast Blob Storage** server (S3-compatible), and a notification email is sent to the operator's configured inbox via SMTP.
+Behind the scenes, every upload is persisted to Postgres, stored in [Garage](https://garagehq.deuxfleurs.org/) (an S3-compatible object store) running in Docker, converted to MP3 with FFmpeg, and a notification email is sent to the operator via SMTP.
+
+See [USER_GUIDE.md](./USER_GUIDE.md) for the end-user walkthrough.
 
 ## Architecture
 
 ```
-┌─────────┐    ┌─────────────────┐    ┌──────────────────┐
-│  user   │───▶│  Next.js (web)  │───▶│ Fast Blob Storage │
-└─────────┘    │   :3000         │    │     :8080         │
-               └────┬──────┬─────┘    └──────────────────┘
-                    │      │
-                    ▼      ▼
-              ┌────────┐ ┌────────┐
-              │ Postgres│ │  SMTP  │
-              │  :5432 │ │ (Mailpit│
-              └────────┘ │  :1025)│
-                        └────────┘
+┌─────────┐    ┌─────────────────┐    ┌────────────┐
+│  user   │───▶│  Next.js (web)  │───▶│   Garage   │
+└─────────┘    │   :3000         │    │  S3 :3900  │
+                └────┬──────┬─────┘    └────────────┘
+                     │      │
+                     ▼      ▼
+               ┌────────┐ ┌────────┐
+               │ Postgres│ │  SMTP  │
+               │  :5432 │ │ :1025  │
+               └────────┘ └────────┘
 ```
+
+A bundled `garage-init` one-shot container creates the bucket and issues an access key on first boot, then exits. The web app reads the credentials from a shared Docker volume at startup.
 
 ## Stack
 
 - **Frontend & API**: [Next.js 15](https://nextjs.org) (App Router, React 19, TypeScript)
 - **Auth**: [Better Auth](https://www.better-auth.com/) — email & password
-- **Database**: PostgreSQL 16 (via [Drizzle ORM](https://orm.drizzle.team/))
-- **Storage**: Custom **Fast Blob Storage** (Fastify + S3-compatible API)
+- **Database**: PostgreSQL 17 (via [Drizzle ORM](https://orm.drizzle.team/))
+- **Storage**: [Garage](https://garagehq.deuxfleurs.org/) — S3-compatible object store (Docker image `dxflrs/garage`)
+- **Audio conversion**: FFmpeg (any audio/video in → MP3 out)
 - **Email**: Nodemailer (SMTP — Mailpit in dev, your SMTP server in prod)
 - **Styling**: Tailwind CSS with a custom modern dark theme
 - **Container**: Docker Compose
@@ -39,10 +43,13 @@ Behind the scenes, every upload is persisted to Postgres, stored in the bundled 
 ## Quick start (Docker)
 
 ```bash
-# 1. Copy environment template and set a real secret
+# 1. Copy environment template and fill in real values
 cp .env.example .env
-# Edit .env — at minimum set BETTER_AUTH_SECRET to a long random string
-# Generate one with:  openssl rand -base64 48
+# Edit .env — at minimum:
+#   - BETTER_AUTH_SECRET (generate: openssl rand -base64 48)
+#   - SMTP_* credentials for outbound mail
+#   - NOTIFY_EMAIL (operator inbox) and ADMIN_EMAIL (gates /api/admin/*)
+#   - POSTGRES_PASSWORD
 
 # 2. Build & launch everything
 docker compose up --build
@@ -54,10 +61,18 @@ Then open:
 |------------------|------------------------------------|
 | Resonate AI web  | http://localhost:3000              |
 | Mailpit inbox    | http://localhost:8025              |
-| Blob storage API | http://localhost:8080/health       |
+| Garage S3 API    | http://localhost:3900              |
 | Postgres         | `localhost:5432` (`resonate` / `resonate` / `resonate`) |
 
-Sign up with any email + password (≥ 8 chars), then upload an audio file.
+Sign up with any email + password (≥ 8 chars), then upload.
+
+## Supported formats
+
+**Audio (≤ 500 MB each):** MP3, WAV, FLAC, M4A, AAC, OGG, OPUS, AIFF, ALAC, WMA, AMR, AC3, CAF, AU, and more (anything `audio/*`).
+
+**Video (audio is extracted and converted to MP3):** MP4, MOV, MKV, WEBM, AVI, WMV, FLV, 3GP, TS, MTS, M2TS, and more (anything `video/*`).
+
+**Limits:** up to 25 files per batch, ≤ 500 MB per file.
 
 ## Production SMTP
 
@@ -72,56 +87,61 @@ environment:
   SMTP_SECURE: "false"
   SMTP_FROM: "Resonate AI <no-reply@yourdomain.com>"
   NOTIFY_EMAIL: team@yourdomain.com
+  ADMIN_EMAIL: admin@yourdomain.com
 ```
 
-`NOTIFY_EMAIL` is the operator address that receives the upload notification (filename, size, uploader, blob reference).
+- `NOTIFY_EMAIL` — operator address that receives upload notifications.
+- `ADMIN_EMAIL` — single admin address that can mint signed download links for any user's file. The app refuses to start if this is missing.
 
 ## API surface
 
-| Method | Path                                  | Description                          |
-|--------|---------------------------------------|--------------------------------------|
-| POST   | `/api/auth/sign-up/email`             | Better Auth email/password sign-up   |
-| POST   | `/api/auth/sign-in/email`             | Better Auth email/password sign-in   |
-| POST   | `/api/upload`                         | Upload an audio file (multipart)     |
-| GET    | `/api/files`                          | List the signed-in user's uploads    |
-| GET    | `/health` (blob)                      | Blob storage health                  |
-| PUT    | `/buckets/:bucket/objects/*`          | Store an object                      |
-| GET    | `/buckets/:bucket/objects/*`          | Retrieve an object                   |
+| Method | Path                                  | Description                                |
+|--------|---------------------------------------|--------------------------------------------|
+| POST   | `/api/auth/sign-up/email`             | Better Auth email/password sign-up         |
+| POST   | `/api/auth/sign-in/email`             | Better Auth email/password sign-in         |
+| POST   | `/api/upload`                         | Upload up to 25 audio/video files (multipart) |
+| GET    | `/api/files`                          | List the signed-in user's uploads          |
+| GET    | `/api/files/:id/url`                  | Mint a signed download URL for an upload   |
+| GET    | `/api/admin/...`                      | Admin-only endpoints (gated by `ADMIN_EMAIL`) |
+| GET    | `/api/health`                         | Web app healthcheck                        |
 
 ## Project layout
 
 ```
 resonateai/
-├── docker-compose.yml        # web + blob-storage + postgres + mailpit
+├── docker-compose.yml        # web + garage + garage-init + postgres + mailpit
 ├── .env.example
-├── web/                      # Next.js app (Dockerfile included)
-│   ├── src/
-│   │   ├── app/              # App Router pages + API routes
-│   │   ├── components/       # Client components
-│   │   ├── db/               # Drizzle schema
-│   │   └── lib/              # auth, blob, email, session, utils
-│   └── Dockerfile
-└── blob-storage/             # Fast Blob Storage server (Fastify)
+├── garage/
+│   ├── garage.toml           # Garage S3 configuration
+│   └── init.mjs              # One-shot: create bucket + access key on first boot
+└── web/                      # Next.js app (Dockerfile + entrypoint included)
     ├── src/
-    │   ├── server.js
-    │   └── blob-storage.js
-    └── Dockerfile
+    │   ├── app/              # App Router pages + API routes
+    │   │   ├── api/          # auth, upload, files, admin, health
+    │   │   ├── dashboard/    # Authenticated dashboard
+    │   │   ├── sign-in/      # Sign-in page
+    │   │   └── sign-up/      # Sign-up page
+    │   ├── components/       # Client components (dashboard, upload, admin, brand…)
+    │   ├── db/               # Drizzle schema + client
+    │   └── lib/              # auth, blob, convert (FFmpeg), email, signed-urls
+    ├── Dockerfile
+    └── entrypoint.sh
 ```
 
 ## Development without Docker
 
-Each piece runs independently:
+Each piece can run on the host, but you'll need to bring your own Postgres, Garage (or any S3-compatible store), and SMTP. The easiest path is still `docker compose up`.
 
 ```bash
 # Web (terminal 1)
 cd web && npm install
-DATABASE_URL=postgres://resonate:resonate@localhost:5432/resonate \
-BLOB_STORAGE_ENDPOINT=http://localhost:8080 \
 npm run dev
 
-# Blob storage (terminal 2)
-cd blob-storage && npm install && npm run dev
+# Apply the schema against your Postgres
+DATABASE_URL=postgres://... npm run db:push
 ```
+
+The web container's `entrypoint.sh` waits for Postgres, runs `drizzle-kit push`, then starts Next.js — so the same flow works in dev with `db:push` ahead of `dev`.
 
 ## License
 
