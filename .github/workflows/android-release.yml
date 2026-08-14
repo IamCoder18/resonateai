@@ -105,15 +105,15 @@ jobs:
               -dname "CN=Android Debug,O=Android,C=US"
           fi
           ls -l "$KEYSTORE"
-          # Export gradle signing properties for downstream steps. The debug
-          # keystore is auto-created by AGP on every dev machine; AGP also
-          # guarantees its credentials match the values below.
+          # Write signing props into android/gradle.properties so the build
+          # picks them up — env vars alone are not visible to project.hasProperty.
+          touch android/gradle.properties
           {
             echo "RESONATE_KEYSTORE_FILE=${KEYSTORE}"
             echo "RESONATE_KEYSTORE_PASSWORD=android"
             echo "RESONATE_KEY_ALIAS=androiddebugkey"
             echo "RESONATE_KEY_PASSWORD=android"
-          } >> "$GITHUB_ENV"
+          } >> android/gradle.properties
 
       - name: Build mobile web bundle and assemble APK
         run: |
