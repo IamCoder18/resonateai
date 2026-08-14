@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & how-to help
+    url: https://github.com/IamCoder18/resonateai/discussions
+    about: Use Discussions for usage questions, deployment help, and casual talk — keep Issues for actionable bugs and features.
+  - name: Security disclosures
+    url: https://github.com/IamCoder18/resonateai/security/advisories/new
+    about: Report security issues privately via GitHub Security Advisories. Do not file a public issue.

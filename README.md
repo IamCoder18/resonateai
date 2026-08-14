@@ -36,7 +36,7 @@ A bundled `garage-init` one-shot container creates the bucket and issues an acce
 - **Database**: PostgreSQL 17 (via [Drizzle ORM](https://orm.drizzle.team/))
 - **Storage**: [Garage](https://garagehq.deuxfleurs.org/) — S3-compatible object store (Docker image `dxflrs/garage`)
 - **Audio conversion**: FFmpeg (any audio/video in → MP3 out)
-- **Email**: Nodemailer (SMTP — Mailpit in dev, your SMTP server in prod)
+- **Email**: Nodemailer (your SMTP server — no dev catcher is wired in; bring your own)
 - **Styling**: Tailwind CSS with a custom modern dark theme
 - **Container**: Docker Compose
 
@@ -60,7 +60,6 @@ Then open:
 | Service          | URL                                |
 |------------------|------------------------------------|
 | Resonate AI web  | http://localhost:3000              |
-| Mailpit inbox    | http://localhost:8025              |
 | Garage S3 API    | http://localhost:3900              |
 | Postgres         | `localhost:5432` (`resonate` / `resonate` / `resonate`) |
 
