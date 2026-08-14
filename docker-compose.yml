@@ -1,0 +1,118 @@
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-resonate}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-resonate}
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-resonate} -d $${POSTGRES_DB:-resonate}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    expose:
+      - "5432"
+
+  migrate:
+    build:
+      context: ./web
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-resonate}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-resonate}
+    command: ["npx", "drizzle-kit", "push", "--force", "--config=drizzle.config.ts"]
+    restart: "no"
+
+  garage:
+    image: dxflrs/garage:v1.0.0
+    restart: unless-stopped
+    volumes:
+      - ./garage/garage.toml:/etc/garage.toml:ro
+      - garage_data:/var/lib/garage
+      - garage_shared:/shared
+    expose:
+      - "3900"
+      - "3901"
+      - "3903"
+
+  garage-init:
+    image: node:22-alpine
+    depends_on:
+      garage:
+        condition: service_started
+    volumes:
+      - ./garage/init.mjs:/init.mjs:ro
+      - garage_shared:/shared
+    environment:
+      SHARED_DIR: /shared
+      BUCKET: audio
+      KEY_NAME: resonateai-web
+      ZONE: dc1
+      CAPACITY: "1000000"
+      GARAGE_ADMIN_TOKEN: cf644caa6d0c173c32640588d4331d69a5bc3466a1dda5637dc4fd9ca0717e9b
+    entrypoint: ["node", "/init.mjs"]
+    restart: "no"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025"
+    expose:
+      - "1025"
+
+  web:
+    build:
+      context: ./web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      garage:
+        condition: service_started
+      garage-init:
+        condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - garage_shared:/shared:ro
+    entrypoint: ["/bin/sh", "/app/entrypoint.sh"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-resonate}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-resonate}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://resonate.aaravlabs.com}
+      S3_ENDPOINT: http://garage:3900
+      S3_REGION: garage
+      S3_BUCKET: audio
+      S3_FORCE_PATH_STYLE: "true"
+      S3_CREDENTIALS_FILE: /shared/garage.env
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM}
+      NOTIFY_EMAIL: ${NOTIFY_EMAIL}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-${BETTER_AUTH_URL}}
+    expose:
+      - "3000"
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+volumes:
+  postgres_data:
+  garage_data:
+  garage_shared:

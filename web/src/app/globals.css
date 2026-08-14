@@ -1,0 +1,206 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --canvas: #0a0907;
+  --panel: #14110d;
+  --bone: #f4f1ea;
+  --steel: #9a948a;
+  --line: #ffffff1f;
+  --accent: #ff7a1a;
+  --accent-dim: #d4600f;
+  --bone-70: #f4f1eab3;
+  --bone-80: #f4f1eacc;
+  --steel-70: #9a948ab3;
+  --steel-55: #9a948a8c;
+  --steel-40: #9a948a66;
+  --accent-60: #ff7a1a99;
+  --accent-40: #ff7a1a66;
+  --accent-20: #ff7a1a33;
+  --accent-10: #ff7a1a1a;
+  --line-strong: #ffffff33;
+  --panel-30: #14110d4d;
+  --panel-40: #14110d66;
+  --panel-50: #14110d80;
+  --panel-60: #14110d99;
+  --panel-70: #14110db3;
+  --panel-90: #14110de6;
+}
+
+* {
+  border-color: var(--line);
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--canvas);
+  color: var(--bone);
+}
+
+body {
+  background-color: var(--canvas);
+  color: var(--bone);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-weight: 500;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--canvas);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--canvas);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--steel-55);
+}
+
+section[id] {
+  scroll-margin-top: 6rem;
+}
+
+.font-serif {
+  font-feature-settings: "ss01", "ss02";
+  letter-spacing: -0.02em;
+}
+
+.font-mono {
+  font-feature-settings: "zero", "ss01";
+}
+
+/* === Reveal (IntersectionObserver-driven enter) ============================= */
+/* Only animate when the JS enhancement is alive — avoids the page being
+   blank if JS fails or hydration is delayed. */
+html.js-ready .reveal:not(.is-visible) {
+  opacity: 0;
+  transform: translateY(22px);
+}
+.reveal {
+  transition:
+    opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0s);
+  will-change: opacity, transform;
+}
+html.js-ready .reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* === Backgrounds ============================================================ */
+@keyframes pm-grid-drift {
+  0% { background-position: 0 0; }
+  to { background-position: 44px 44px; }
+}
+.bg-grid-drift {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  animation: 16s linear infinite pm-grid-drift;
+}
+
+.bg-grid-fine {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.bg-dot-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.bg-hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.08) 0,
+    rgba(255, 255, 255, 0.08) 1px,
+    transparent 1px,
+    transparent 7px
+  );
+}
+
+.bg-hatch-soft {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.05) 0,
+    rgba(255, 255, 255, 0.05) 1px,
+    transparent 1px,
+    transparent 6px
+  );
+}
+
+/* === Resonance sweep (hero top) ============================================ */
+@keyframes resonance-sweep {
+  0% { opacity: 0; transform: translateY(-10%); }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  to { opacity: 0; transform: translateY(800%); }
+}
+.resonance-sweep {
+  animation: 9s cubic-bezier(0.45, 0, 0.55, 1) infinite resonance-sweep;
+}
+
+/* === Floating pulse (for the live indicator) ============================== */
+@keyframes pulse-soft {
+  0%, to { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.pulse-soft { animation: 2.4s ease-in-out infinite pulse-soft; }
+
+/* === Marquee for waveform strip =========================================== */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track { animation: 36s linear infinite marquee; }
+
+/* === Audio-bar equalizer (subtle, interactive accent) ===================== */
+@keyframes eq-bar {
+  0%, to { transform: scaleY(0.25); }
+  50% { transform: scaleY(1); }
+}
+.eq-bar { animation: 1.1s ease-in-out infinite eq-bar; transform-origin: bottom; }
+
+/* === Floating board (dashboard hero) ====================================== */
+@keyframes float-soft {
+  0%, to { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.float-soft { animation: 6s ease-in-out infinite float-soft; }
+
+/* === Reduced motion ======================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transition: none; transform: none; }
+  .resonance-sweep,
+  .pulse-soft,
+  .marquee-track,
+  .eq-bar,
+  .float-soft,
+  .bg-grid-drift { animation: none !important; }
+}
+
+/* === Form chrome ========================================================= */
+input::placeholder,
+textarea::placeholder {
+  color: var(--steel-55);
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
