@@ -1,0 +1,229 @@
+name: Android release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag (e.g. v0.1.0). Leave blank to auto-generate."
+        required: false
+        default: ""
+      release_name:
+        description: "Human-readable release name."
+        required: false
+        default: "Resonate AI Android"
+      draft:
+        description: "Create as draft release?"
+        type: boolean
+        default: true
+      prerelease:
+        description: "Mark as prerelease?"
+        type: boolean
+        default: false
+      body:
+        description: "Release notes (markdown)."
+        required: false
+        default: ""
+      sign:
+        description: "Sign release with keystore from repo secrets?"
+        type: boolean
+        default: false
+      build_aab:
+        description: "Also produce an Android App Bundle (AAB) for Play Store?"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    outputs:
+      version: ${{ steps.rename.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Setup Java 17 (for AGP 8.2.1)
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+          cache: "gradle"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platforms;android-34
+            build-tools;34.0.0
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/app/build.gradle') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Install root dependencies (Capacitor CLI)
+        run: npm ci --no-audit --no-fund
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci --no-audit --no-fund
+
+      - name: Clean any leftover mobile-prebuild backups
+        run: |
+          rm -rf web/src/_api-mobile-backup \
+                 web/src/_dashboard-mobile-backup \
+                 web/src/_page-mobile-backup.tsx
+
+      - name: Decode keystore (if signing enabled)
+        if: ${{ inputs.sign == true }}
+        env:
+          RESONATE_KEYSTORE_BASE64: ${{ secrets.RESONATE_KEYSTORE_BASE64 }}
+          RESONATE_KEYSTORE_PASSWORD: ${{ secrets.RESONATE_KEYSTORE_PASSWORD }}
+          RESONATE_KEY_ALIAS: ${{ secrets.RESONATE_KEY_ALIAS }}
+          RESONATE_KEY_PASSWORD: ${{ secrets.RESONATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${RESONATE_KEYSTORE_BASE64:?RESONATE_KEYSTORE_BASE64 secret is required when sign=true}"
+          : "${RESONATE_KEYSTORE_PASSWORD:?RESONATE_KEYSTORE_PASSWORD secret is required when sign=true}"
+          : "${RESONATE_KEY_ALIAS:?RESONATE_KEY_ALIAS secret is required when sign=true}"
+          : "${RESONATE_KEY_PASSWORD:?RESONATE_KEY_PASSWORD secret is required when sign=true}"
+          mkdir -p android/app/keystore
+          echo "$RESONATE_KEYSTORE_BASE64" | base64 -d > android/app/keystore/release.jks
+          ls -l android/app/keystore/release.jks
+          # Export gradle signing properties for downstream steps.
+          # Only set when sign=true so project.hasProperty(...) stays false otherwise.
+          {
+            echo "RESONATE_KEYSTORE_FILE=keystore/release.jks"
+            echo "RESONATE_KEYSTORE_PASSWORD=${RESONATE_KEYSTORE_PASSWORD}"
+            echo "RESONATE_KEY_ALIAS=${RESONATE_KEY_ALIAS}"
+            echo "RESONATE_KEY_PASSWORD=${RESONATE_KEY_PASSWORD}"
+          } >> "$GITHUB_ENV"
+
+      - name: Build mobile web bundle and assemble APK
+        run: |
+          set -euo pipefail
+          # mobile:package runs prebuild → web build → postbuild → cap sync → assembleRelease
+          npm run mobile:package
+
+      - name: Build AAB
+        if: ${{ inputs.build_aab == true }}
+        working-directory: android
+        run: ./gradlew bundleRelease
+
+      - name: List built artifacts
+        run: |
+          echo "APKs:"
+          find android/app/build/outputs/apk -type f -name '*.apk' -print -exec ls -lh {} \;
+          if [ "${{ inputs.build_aab }}" = "true" ]; then
+            echo "AABs:"
+            find android/app/build/outputs/bundle -type f -name '*.aab' -print -exec ls -lh {} \;
+          fi
+
+      - name: Rename artifacts with version suffix
+        id: rename
+        run: |
+          set -euo pipefail
+          VERSION=$(grep -E "versionName" android/app/build.gradle | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          APKS=()
+          AABS=()
+          while IFS= read -r f; do
+            new="${f%.apk}-${VERSION}.apk"
+            mv "$f" "$new"
+            APKS+=("$new")
+          done < <(find android/app/build/outputs/apk -type f -name '*.apk')
+          if [ "${{ inputs.build_aab }}" = "true" ]; then
+            while IFS= read -r f; do
+              new="${f%.aab}-${VERSION}.aab"
+              mv "$f" "$new"
+              AABS+=("$new")
+            done < <(find android/app/build/outputs/bundle -type f -name '*.aab')
+          fi
+          {
+            echo "version=${VERSION}"
+            echo "apks<<EOF"
+            printf '%s\n' "${APKS[@]}"
+            echo "EOF"
+            if [ "${{ inputs.build_aab }}" = "true" ]; then
+              echo "aabs<<EOF"
+              printf '%s\n' "${AABS[@]}"
+              echo "EOF"
+            fi
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-${{ steps.rename.outputs.version }}
+          path: |
+            ${{ steps.rename.outputs.apks }}
+            ${{ steps.rename.outputs.aabs }}
+          if-no-files-found: error
+
+      - name: Remove keystore from runner
+        if: ${{ inputs.sign == true }}
+        run: rm -rf android/app/keystore
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-${{ needs.build.outputs.version }}
+          path: artifacts
+        continue-on-error: false
+
+      - name: Resolve tag
+        id: tag
+        env:
+          INPUT_TAG: ${{ inputs.tag_name }}
+          ARTIFACT_DIR: artifacts
+        run: |
+          set -euo pipefail
+          if [ -n "$INPUT_TAG" ]; then
+            echo "name=${INPUT_TAG}" >> "$GITHUB_OUTPUT"
+          else
+            VER=$(ls "${ARTIFACT_DIR}"/*.apk 2>/dev/null | head -1 | sed -E 's/.*-([0-9]+\.[0-9]+\.[0-9]+)\.apk/\1/' || echo "0.1.0")
+            echo "name=v${VER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          name: ${{ inputs.release_name }} (${{ steps.tag.outputs.name }})
+          draft: ${{ inputs.draft }}
+          prerelease: ${{ inputs.prerelease }}
+          body: ${{ inputs.body }}
+          files: |
+            artifacts/*.apk
+            artifacts/*.aab
+          fail_on_unmatched_files: false
+          generate_release_notes: ${{ inputs.body == '' }}
