@@ -176,8 +176,8 @@ jobs:
         with:
           name: android-release-${{ steps.rename.outputs.version }}
           path: |
-            ${{ steps.rename.outputs.apks }}
-            ${{ steps.rename.outputs.aabs }}
+            android/app/build/outputs/apk/**/*.apk
+            android/app/build/outputs/bundle/**/*.aab
           if-no-files-found: error
 
       - name: Remove keystore from runner
@@ -221,7 +221,7 @@ jobs:
           prerelease: ${{ inputs.prerelease }}
           body: ${{ inputs.body }}
           files: |
-            artifacts/*.apk
-            artifacts/*.aab
+            artifacts/**/*.apk
+            artifacts/**/*.aab
           fail_on_unmatched_files: false
           generate_release_notes: ${{ inputs.body == '' }}
