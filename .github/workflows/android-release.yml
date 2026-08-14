@@ -23,10 +23,6 @@ on:
         description: "Release notes (markdown)."
         required: false
         default: ""
-      sign:
-        description: "Sign release with keystore from repo secrets?"
-        type: boolean
-        default: false
       build_aab:
         description: "Also produce an Android App Bundle (AAB) for Play Store?"
         type: boolean
@@ -95,29 +91,28 @@ jobs:
                  web/src/_dashboard-mobile-backup \
                  web/src/_page-mobile-backup.tsx
 
-      - name: Decode keystore (if signing enabled)
-        if: ${{ inputs.sign == true }}
-        env:
-          RESONATE_KEYSTORE_BASE64: ${{ secrets.RESONATE_KEYSTORE_BASE64 }}
-          RESONATE_KEYSTORE_PASSWORD: ${{ secrets.RESONATE_KEYSTORE_PASSWORD }}
-          RESONATE_KEY_ALIAS: ${{ secrets.RESONATE_KEY_ALIAS }}
-          RESONATE_KEY_PASSWORD: ${{ secrets.RESONATE_KEY_PASSWORD }}
+      - name: Ensure debug keystore exists
         run: |
           set -euo pipefail
-          : "${RESONATE_KEYSTORE_BASE64:?RESONATE_KEYSTORE_BASE64 secret is required when sign=true}"
-          : "${RESONATE_KEYSTORE_PASSWORD:?RESONATE_KEYSTORE_PASSWORD secret is required when sign=true}"
-          : "${RESONATE_KEY_ALIAS:?RESONATE_KEY_ALIAS secret is required when sign=true}"
-          : "${RESONATE_KEY_PASSWORD:?RESONATE_KEY_PASSWORD secret is required when sign=true}"
-          mkdir -p android/app/keystore
-          echo "$RESONATE_KEYSTORE_BASE64" | base64 -d > android/app/keystore/release.jks
-          ls -l android/app/keystore/release.jks
-          # Export gradle signing properties for downstream steps.
-          # Only set when sign=true so project.hasProperty(...) stays false otherwise.
+          KEYSTORE="$HOME/.android/debug.keystore"
+          mkdir -p "$(dirname "$KEYSTORE")"
+          if [ ! -f "$KEYSTORE" ]; then
+            keytool -genkeypair -v \
+              -keystore "$KEYSTORE" \
+              -storepass android -keypass android \
+              -alias androiddebugkey \
+              -keyalg RSA -keysize 2048 -validity 10950 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          ls -l "$KEYSTORE"
+          # Export gradle signing properties for downstream steps. The debug
+          # keystore is auto-created by AGP on every dev machine; AGP also
+          # guarantees its credentials match the values below.
           {
-            echo "RESONATE_KEYSTORE_FILE=keystore/release.jks"
-            echo "RESONATE_KEYSTORE_PASSWORD=${RESONATE_KEYSTORE_PASSWORD}"
-            echo "RESONATE_KEY_ALIAS=${RESONATE_KEY_ALIAS}"
-            echo "RESONATE_KEY_PASSWORD=${RESONATE_KEY_PASSWORD}"
+            echo "RESONATE_KEYSTORE_FILE=${KEYSTORE}"
+            echo "RESONATE_KEYSTORE_PASSWORD=android"
+            echo "RESONATE_KEY_ALIAS=androiddebugkey"
+            echo "RESONATE_KEY_PASSWORD=android"
           } >> "$GITHUB_ENV"
 
       - name: Build mobile web bundle and assemble APK
@@ -179,10 +174,6 @@ jobs:
             android/app/build/outputs/apk/**/*.apk
             android/app/build/outputs/bundle/**/*.aab
           if-no-files-found: error
-
-      - name: Remove keystore from runner
-        if: ${{ inputs.sign == true }}
-        run: rm -rf android/app/keystore
 
   release:
     name: Publish GitHub Release
