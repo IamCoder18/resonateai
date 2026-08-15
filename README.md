@@ -55,6 +55,8 @@ cp .env.example .env
 docker compose up --build
 ```
 
+To deploy a code change after the first launch: `docker compose up --build -d web` rebuilds and restarts just the web container (Postgres and Garage data persist in named volumes).
+
 Then open:
 
 | Service          | URL                                |
@@ -110,21 +112,26 @@ environment:
 resonateai/
 ├── docker-compose.yml        # web + garage + garage-init + postgres
 ├── .env.example
+├── capacitor.config.json     # App id, splash, status bar, server scheme
+├── android/                  # Capacitor-generated Android project
+├── app-release-1.0.0.apk     # Latest signed release APK (for sideloading)
 ├── garage/
 │   ├── garage.toml           # Garage S3 configuration
 │   └── init.mjs              # One-shot: create bucket + access key on first boot
+├── scripts/                  # mobile-prebuild / mobile-postbuild scripts
 └── web/                      # Next.js app (Dockerfile + entrypoint included)
     ├── src/
     │   ├── app/              # App Router pages + API routes
     │   │   ├── api/          # auth, upload, files, admin, health
+    │   │   ├── app/          # Mobile UI routes (sign-in, console, queue, account, share…)
     │   │   ├── dashboard/    # Authenticated dashboard
     │   │   ├── sign-in/      # Sign-in page
     │   │   └── sign-up/      # Sign-up page
-    │   ├── components/       # Client components (dashboard, upload, admin, brand…)
+    │   ├── components/       # Client components (dashboard, upload, mobile, brand…)
     │   ├── db/               # Drizzle schema + client
-    │   └── lib/              # auth, blob, convert (FFmpeg), email, signed-urls
+    │   └── lib/              # auth, api-base, capacitor-runtime, blob, convert, email
     ├── Dockerfile
-    └── entrypoint.sh
+    └── MOBILE.md             # Full mobile build pipeline + share-extension + test plan
 ```
 
 ## Development without Docker
@@ -153,18 +160,125 @@ A native-feel Android shell lives in [`android/`](./android) and ships the
 Better Auth + `/api/*` endpoints back the mobile app — there is no mobile
 backend.
 
+### Day-to-day development
+
+The mobile UI lives in the same Next.js app as the web app. You can
+iterate on it in a regular browser — no Android tooling required:
+
 ```bash
-# Build the static mobile bundle, sync it into android/, and assemble an APK
-npm run mobile:build      # → web/out
-npm run mobile:sync       # → cap sync android
-npm run mobile:assemble   # → gradle assembleDebug (debug APK)
-npm run mobile:package    # → signed release APK
+# Develop the mobile UI in the browser at http://localhost:3000/app/*
+npm run dev
+# Visit http://localhost:3000/app/sign-in, /app/console, /app/queue, etc.
 ```
 
-See [`web/MOBILE.md`](./web/MOBILE.md) for the full build pipeline, the
-share-extension manifest, sideload install instructions for testers, and
-the on-device test plan.
+Capacitor-aware helpers (`isNativePlatform()`, `Haptics`, `Keyboard`, etc.)
+gracefully no-op on the web, so anything you build works in both
+contexts. API calls should go through `apiUrl()` from `@/lib/api-base` — it
+resolves to the deployed backend on both web and native.
 
-Push notifications, Play Store listing, and the iOS build are
-explicitly deferred — see the v1 plan in
-[`.kilo/plans/`](./.kilo/plans/) for the full scope.
+### Testing on a real device
+
+Skip the signing/keystore/release-APK stuff for now — the dev loop is
+just NPM + Gradle + adb.
+
+For a change that's **mobile UI only** (anything under `web/src/app/app/*`
+or `web/src/components/` — nothing in `web/src/app/api/` or anything the
+server reads), you do **not** need to rebuild the web Docker container.
+The mobile app loads its UI from bundled assets and only talks to the
+live API at runtime. So:
+
+```bash
+# 0. Plug in your Android device with USB debugging on, then:
+adb devices                        # confirm it shows up
+
+# 1. Make your change under web/src/app/app/* or web/src/components/
+
+# 2. Rebuild the mobile bundle (static export of /app/* into web/out)
+npm run mobile:build
+
+# 3. Copy the new bundle into the Android project
+npx cap copy android
+
+# 4. Build the debug APK
+cd android && ./gradlew assembleDebug && cd ..
+
+# 5. Install it on the device (the -r flag reinstalls over the existing
+#    app, preserving your signed-in session)
+adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+
+# 6. Launch it
+adb shell am start -n com.aaravlabs.resonate/.MainActivity
+```
+
+That's it. Repeat steps 1–6 for each change. The Gradle build is
+incremental — only changed files recompile.
+
+**If you also changed something the server reads** (API routes under
+`web/src/app/api/`, `web/src/lib/auth.ts`, CORS middleware, etc.), also
+rebuild and restart the web container so the API the app talks to has
+your change:
+
+```bash
+docker compose up --build -d web
+```
+
+To watch the WebView's `console.log` / network / DOM while you click
+around, attach Chrome DevTools:
+
+```bash
+adb shell cat /proc/net/unix | grep webview_devtools_remote
+# Note the <pid> suffix, then:
+adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>
+# Open http://localhost:9222 in a browser, or chrome://inspect/#devices
+
+# Useful one-liners while developing:
+adb -s <device> logcat -d | grep -iE "chromium|capacitor"   # app logs
+adb -s <device> exec-out screencap -p > screen.png          # screenshot
+```
+
+When you're ready to ship a release APK to a tester, the signed
+`mobile:package` script is documented in [`web/MOBILE.md`](./web/MOBILE.md)
+— ignore it until you need it.
+
+### How it fits together
+
+- `web/src/app/app/*` — every mobile UI route (`sign-in`, `sign-up`,
+  `console`, `queue`, `account`, `share`, `intro`). Wrap content in
+  `<MobileScaffold>` from `web/src/app/app/layout.tsx`.
+- `web/src/lib/api-base.ts` — `apiUrl()` resolves the backend origin in
+  both browser and native contexts.
+- `web/src/lib/capacitor-runtime.ts` — `isNativePlatform()` /
+  `getCapacitorServerUrl()` / `getRuntimePlatform()`.
+- `scripts/mobile-prebuild.js` — stubs the marketing-site root and moves
+  `api/` + `dashboard/` out of the build so the static export contains
+  only `app/*`. `scripts/mobile-postbuild.js` restores them.
+- `next.config.js` — switch on `BUILD_TARGET=mobile` to enable static
+  export (`output: "export"`) and the mobile build's image config.
+- `capacitor.config.json` — bundle id, splash, status bar, scheme
+  (`https://localhost`), plugins (`SplashScreen`, `StatusBar`, `Haptics`).
+- `android/` — generated Capacitor project. Web assets land in
+  `app/src/main/assets/public/` via `cap copy`.
+
+### Cross-origin auth (Capacitor WebView → deployed API)
+
+The WebView origin is `https://localhost` (set by Capacitor's
+`androidScheme`), while the API lives at `resonate.aaravlabs.com`. To
+make Better Auth work cross-site:
+
+- `web/src/middleware.ts` adds `Access-Control-Allow-Origin` /
+  `Access-Control-Allow-Credentials` for `https://localhost`,
+  `http://localhost`, and `capacitor://localhost` on every `/api/*`
+  request, and short-circuits `OPTIONS` preflights.
+- `web/src/lib/auth.ts` sets `advanced.defaultCookieAttributes` to
+  `sameSite: "none"` + `secure: true` so the session cookie travels on
+  cross-site fetches from the WebView.
+
+These changes are harmless on the web (same-origin), but required for
+the mobile app to sign in and stay signed in.
+
+### Sideload install for testers
+
+See [`web/MOBILE.md`](./web/MOBILE.md) for sideload instructions, the
+share-extension manifest, and the on-device test plan. Push
+notifications, Play Store listing, and the iOS build are explicitly
+deferred — see the v1 plan in [`.kilo/plans/`](./.kilo/plans/).

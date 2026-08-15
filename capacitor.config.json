@@ -1,5 +1,5 @@
 {
-  "appId": "ai.aaravlabs.resonate",
+  "appId": "com.aaravlabs.resonate",
   "appName": "Resonate AI",
   "webDir": "web/out",
   "android": {
@@ -13,7 +13,7 @@
     "SplashScreen": {
       "launchShowDuration": 800,
       "launchAutoHide": true,
-      "backgroundColor": "#0a0a0f",
+      "backgroundColor": "#0a0907",
       "androidSplashResourceName": "splash",
       "androidScaleType": "CENTER_CROP",
       "showSpinner": false,
@@ -22,7 +22,9 @@
     },
     "StatusBar": {
       "style": "DARK",
-      "backgroundColor": "#0a0a0f",
+      "backgroundColor": "#7a3818",
+      "navigationBarColor": "#0a0907",
+      "navigationBarDarkButtons": false,
       "overlaysWebView": false
     },
     "Haptics": {

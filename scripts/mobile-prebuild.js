@@ -52,7 +52,14 @@ if (fs.existsSync(rootPage)) {
   fs.renameSync(rootPage, rootPageBackup);
   fs.writeFileSync(
     rootPage,
-    `export default function Page() { return null; }\n`,
+    `"use client";\n` +
+    `import { useEffect } from "react";\n` +
+    `import { useRouter } from "next/navigation";\n` +
+    `export default function Page() {\n` +
+    `  const router = useRouter();\n` +
+    `  useEffect(() => { router.replace("/app"); }, [router]);\n` +
+    `  return null;\n` +
+    `}\n`,
   );
   console.log("mobile-prebuild: stubbed web/src/app/page.tsx (mobile root → /app)");
 }

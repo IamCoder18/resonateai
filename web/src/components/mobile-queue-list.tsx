@@ -25,7 +25,9 @@ export function MobileQueueList() {
     else setRefreshing(true);
     setError(null);
     try {
-      const res = await fetch(apiUrl("/api/files"));
+      const res = await fetch(apiUrl("/api/files"), {
+        credentials: "include",
+      });
       if (res.status === 401) {
         setFiles([]);
         return;

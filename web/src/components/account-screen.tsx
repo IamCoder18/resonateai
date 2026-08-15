@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, ExternalLink, Info } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { isNativePlatform } from "@/lib/capacitor-runtime";
 
 interface Props {
   user: { id: string; name: string; email: string };
@@ -10,6 +12,28 @@ interface Props {
 
 export function AccountScreen({ user }: Props) {
   const router = useRouter();
+  const [appVersion, setAppVersion] = useState<string>("…");
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        if (isNativePlatform()) {
+          const { App } = await import("@capacitor/app");
+          const info = await App.getInfo();
+          if (!cancelled) setAppVersion(info.version);
+        } else {
+          if (!cancelled) setAppVersion("Web");
+        }
+      } catch {
+        if (!cancelled) setAppVersion("—");
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function signOut() {
     await authClient.signOut();
@@ -39,7 +63,7 @@ export function AccountScreen({ user }: Props) {
           className="flex items-center justify-between border-b border-line px-4 py-3 transition-colors hover:bg-white/2"
         >
           <span className="font-mono text-[0.85rem] text-bone">
-            Open our website
+            Visit our website
           </span>
           <ExternalLink className="h-4 w-4 text-steel-70" strokeWidth={1.5} />
         </a>
@@ -49,7 +73,7 @@ export function AccountScreen({ user }: Props) {
             App version
           </span>
           <span className="font-mono text-[0.85rem] text-bone">
-            Preview
+            {appVersion}
           </span>
         </div>
       </div>

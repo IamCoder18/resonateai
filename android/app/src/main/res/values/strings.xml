@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Resonate AI</string>
     <string name="title_activity_main">Resonate AI</string>
-    <string name="package_name">ai.aaravlabs.resonate</string>
-    <string name="custom_url_scheme">ai.aaravlabs.resonate</string>
+    <string name="package_name">com.aaravlabs.resonate</string>
+    <string name="custom_url_scheme">com.aaravlabs.resonate</string>
     <string name="share_intent_label">Send to Resonate AI</string>
 </resources>

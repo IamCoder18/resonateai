@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Brand mark — Resonate waveform + 3 dots, accent (#ff7a1a).
+         Source path mirrors web/src/components/brand.tsx BrandMark (viewBox 64).
+         Translated by 22,22 to centre the 64-unit viewBox inside the 66-unit adaptive safe area. -->
+    <group
+        android:translateX="22"
+        android:translateY="22">
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#ff7a1a"
+            android:strokeWidth="3.6"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M4,32 Q9,32 11,22 T17,32 T23,32 T29,32 T35,32 T41,32 T60,32" />
+        <path
+            android:fillColor="#ff7a1a"
+            android:pathData="M11,22 m-2.6,0 a2.6,2.6 0 1,0 5.2,0 a2.6,2.6 0 1,0 -5.2,0" />
+        <path
+            android:fillColor="#ff7a1a"
+            android:pathData="M23,32 m-2.6,0 a2.6,2.6 0 1,0 5.2,0 a2.6,2.6 0 1,0 -5.2,0" />
+        <path
+            android:fillColor="#ff7a1a"
+            android:pathData="M41,32 m-2.6,0 a2.6,2.6 0 1,0 5.2,0 a2.6,2.6 0 1,0 -5.2,0" />
+    </group>
+</vector>

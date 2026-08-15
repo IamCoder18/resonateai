@@ -102,6 +102,7 @@ export function MobileUploadCard({ onUploaded }: Props) {
           }
         };
         xhr.onerror = () => reject(new Error("Network error"));
+        xhr.withCredentials = true;
         xhr.open("POST", apiUrl("/api/upload"));
         xhr.send(fd);
       });
@@ -202,25 +203,25 @@ export function MobileUploadCard({ onUploaded }: Props) {
             type="button"
             onClick={() => {
               void tap();
-              audioRef.current?.click();
+              videoRef.current?.click();
             }}
             disabled={busy}
             className="group relative inline-flex h-12 w-full items-center justify-center gap-2 bg-accent font-mono text-[0.82rem] uppercase tracking-[0.16em] text-canvas transition-colors hover:bg-accent-dim disabled:opacity-50"
           >
-            <Music className="h-4 w-4" strokeWidth={1.5} />
-            Pick audio
+            <Video className="h-4 w-4" strokeWidth={1.5} />
+            Pick video
           </button>
           <button
             type="button"
             onClick={() => {
               void tap();
-              videoRef.current?.click();
+              audioRef.current?.click();
             }}
             disabled={busy}
             className="group relative inline-flex h-12 w-full items-center justify-center gap-2 border border-white/20 font-mono text-[0.82rem] uppercase tracking-[0.16em] text-bone transition-colors hover:border-white/40 disabled:opacity-50"
           >
-            <Video className="h-4 w-4" strokeWidth={1.5} />
-            Pick video
+            <Music className="h-4 w-4" strokeWidth={1.5} />
+            Pick audio
           </button>
         </div>
 

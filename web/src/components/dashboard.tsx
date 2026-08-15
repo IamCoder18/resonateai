@@ -36,7 +36,9 @@ export function Dashboard({ user }: Props) {
 
   async function loadFiles() {
     try {
-      const res = await fetch(apiUrl("/api/files"));
+      const res = await fetch(apiUrl("/api/files"), {
+        credentials: "include",
+      });
       if (res.ok) {
         const data = await res.json();
         setFiles(data.files || []);
@@ -142,8 +144,8 @@ export function Dashboard({ user }: Props) {
                   {successCount} file{successCount === 1 ? "" : "s"} uploaded.
                 </div>
                 <div className="mt-1 font-mono text-[0.85rem] text-bone-70">
-                  We'll email the cleaned copy when it's ready — usually
-                  within <span className="text-accent">a day or two</span>.
+                  We'll email the cleaned version back in the same format —
+                  usually within <span className="text-accent">a day or two</span>.
                 </div>
               </div>
               <button

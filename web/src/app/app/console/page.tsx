@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { MobileUploadCard } from "@/components/mobile-upload-card";
@@ -8,7 +8,7 @@ import type { MobileUploadedFile } from "@/components/mobile-upload-card";
 import { apiUrl } from "@/lib/api-base";
 import type { FileRecord } from "@/components/file-list";
 import { FileList } from "@/components/file-list";
-import { Loader2 } from "lucide-react";
+import { Loader2, ListMusic } from "lucide-react";
 
 export default function AppConsolePage() {
   const router = useRouter();
@@ -41,7 +41,9 @@ export default function AppConsolePage() {
     let cancelled = false;
     void (async () => {
       try {
-        const res = await fetch(apiUrl("/api/files"));
+        const res = await fetch(apiUrl("/api/files"), {
+          credentials: "include",
+        });
         if (!res.ok) return;
         const data = (await res.json()) as { files?: FileRecord[] };
         if (!cancelled) setFiles(data.files ?? []);
@@ -69,6 +71,21 @@ export default function AppConsolePage() {
     setFiles((prev) => [...records, ...prev]);
   }
 
+  const recentFiles = useMemo(() => {
+    const sorted = [...files].sort(
+      (a, b) =>
+        new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
+    );
+    const processing = sorted.filter((f) => f.status === "processing");
+    const mostRecentReady = sorted.find((f) => f.status === "ready");
+    const recent: FileRecord[] = [...processing];
+    if (mostRecentReady) recent.push(mostRecentReady);
+    return recent.sort(
+      (a, b) =>
+        new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
+    );
+  }, [files]);
+
   if (!user) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -84,10 +101,10 @@ export default function AppConsolePage() {
           Console
         </div>
         <h1 className="mt-1 font-serif text-[1.8rem] leading-tight text-bone">
-          {user.name.split(" ")[0]}.
+          Welcome back, {user.name.split(" ")[0]}.
         </h1>
         <p className="mt-1 font-mono text-[0.82rem] text-bone-70">
-          Drop a file. We&apos;ll email the cleaned MP3 when it&apos;s ready.
+          Drop a file. We&apos;ll email the cleaned version back in the same format.
         </p>
       </div>
 
@@ -99,7 +116,7 @@ export default function AppConsolePage() {
             Recent
           </h2>
           <span className="font-mono text-[0.66rem] uppercase tracking-[0.18em] text-steel-70">
-            {files.length} file{files.length === 1 ? "" : "s"}
+            {recentFiles.length} file{recentFiles.length === 1 ? "" : "s"}
           </span>
         </div>
         {loadingFiles ? (
@@ -107,7 +124,17 @@ export default function AppConsolePage() {
             <Loader2 className="h-4 w-4 animate-spin" /> Loading…
           </div>
         ) : (
-          <FileList files={files.slice(0, 5)} />
+          <>
+            <FileList files={recentFiles} />
+            <button
+              type="button"
+              onClick={() => router.push("/app/queue")}
+              className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 border border-white/15 bg-panel-30 font-mono text-[0.78rem] uppercase tracking-[0.16em] text-bone transition-colors hover:border-white/30 hover:bg-panel-40"
+            >
+              <ListMusic className="h-4 w-4" strokeWidth={1.5} />
+              View queue
+            </button>
+          </>
         )}
       </div>
     </div>

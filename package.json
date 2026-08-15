@@ -24,5 +24,9 @@
     "@capacitor/android": "^6.2.1",
     "@capacitor/cli": "^6.0.0",
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/keyboard": "^6.0.4"
   }
 }

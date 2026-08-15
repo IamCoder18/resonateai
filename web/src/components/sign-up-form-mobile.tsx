@@ -33,6 +33,12 @@ export function SignUpFormMobile() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return;
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    const { Keyboard } = await import("@capacitor/keyboard");
+    await Keyboard.hide();
     setLoading(true);
     setError(null);
     setSuggestLogin(false);
@@ -66,6 +72,7 @@ export function SignUpFormMobile() {
         <input
           required
           autoComplete="name"
+          readOnly={loading}
           value={name}
           onChange={(e) => setName(e.target.value)}
           className={inputClass}
@@ -81,6 +88,7 @@ export function SignUpFormMobile() {
           inputMode="email"
           autoComplete="email"
           required
+          readOnly={loading}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={inputClass}
@@ -96,6 +104,7 @@ export function SignUpFormMobile() {
           autoComplete="new-password"
           required
           minLength={8}
+          readOnly={loading}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className={inputClass}

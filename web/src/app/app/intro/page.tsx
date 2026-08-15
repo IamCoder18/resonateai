@@ -14,12 +14,29 @@ export default function AppIntroPage() {
   const [phase, setPhase] = useState<Phase>("raw");
 
   useEffect(() => {
-    setReady(true);
-    const id = setInterval(() => {
-      setPhase((p) => (p === "raw" ? "clean" : "raw"));
-    }, 2800);
-    return () => clearInterval(id);
-  }, []);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const session = await authClient.getSession();
+        if (cancelled) return;
+        if (session.data) {
+          router.replace("/app/console");
+          return;
+        }
+      } catch {
+        /* fall through to intro */
+      }
+      if (cancelled) return;
+      setReady(true);
+      const id = setInterval(() => {
+        setPhase((p) => (p === "raw" ? "clean" : "raw"));
+      }, 2800);
+      return () => clearInterval(id);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const finish = async (intent: "sign-in" | "sign-up") => {
     let signedIn = false;

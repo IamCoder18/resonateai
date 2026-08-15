@@ -40,6 +40,12 @@ export const auth = betterAuth({
     "https://localhost",
     "https://resonate.aaravlabs.com",
   ],
+  advanced: {
+    defaultCookieAttributes: {
+      sameSite: "none",
+      secure: true,
+    },
+  },
 });
 
 export type Session = typeof auth.$Infer.Session;
